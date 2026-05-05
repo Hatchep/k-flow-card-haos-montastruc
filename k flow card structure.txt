@@ -1,0 +1,6 @@
+ha-k-flow-card/
+├── k-flow-card.js      ← the card
+├── README.md
+├── hacs.json
+├── LICENSE             ← optional (MIT)
+└── screenshot.png      ← your own screenshot
