@@ -1,8 +1,11 @@
-# ⚡ K‑Flow Card for Home Assistant
+# ⚡ K‑Flow Card for Home Assistant version 1.0.5
 
 A real‑time, animated energy flow dashboard card – monitor solar, battery, grid, and home consumption with a sleek SVG diagram.
 
-![Screenshot](screenshot.png)
+<img width="1145" height="1601" alt="Screenshot_2026-05-05-20-24-06-66_cbf47468f7ecfbd8ebcc46bf9cc626da" src="https://github.com/user-attachments/assets/7229636f-3c10-42a3-b767-89bc9f4d99e9" />
+<img width="2120" height="3000" alt="Screenshot_2026-05-05-20-23-53-88_cbf47468f7ecfbd8ebcc46bf9cc626da" src="https://github.com/user-attachments/assets/3df907cc-15df-46eb-8a73-b8260d98bfa3" />
+<img width="1130" height="1610" alt="Screenshot_2026-05-05-19-06-37-85_cbf47468f7ecfbd8ebcc46bf9cc626da" src="https://github.com/user-attachments/assets/908209a4-b845-42a9-a5ef-ded329020fe3" />
+
 
 ## ✨ Features
 
