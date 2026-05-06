@@ -19,7 +19,8 @@ A real‑time, animated energy flow dashboard card – monitor solar, battery, g
 - **Fully configurable** – every entity ID can be changed in the YAML editor
 
 
-🧩 Supported Entities
+🧩 Supported Entities.                                                
+
 Any numeric sensor works. The card uses fallbacks (e.g., GoodWe SOC if BMS SOC unavailable).
 
 🎨 Custom Icons
@@ -32,6 +33,7 @@ Home icon: home-icon.png
 You can adjust their size and position by editing the corresponding <image> tags inside the card’s JavaScript (lines ~570 and ~580).
 
 🐞 Troubleshooting
+
 Symptom	Solution
 "Custom element doesn't exist"	Check resource URL (/local/k-flow-card.js) and type (JavaScript Module).
 All values show “--” or NaN	Verify that the sensor IDs exist and return numeric values.
