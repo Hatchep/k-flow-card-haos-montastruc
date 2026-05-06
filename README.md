@@ -24,6 +24,7 @@ A real‑time, animated energy flow dashboard card – monitor solar, battery, g
 Any numeric sensor works. The card uses fallbacks (e.g., GoodWe SOC if BMS SOC unavailable).
 
 🎨 Custom Icons
+
 Replace the Grid and Home icons by placing your own PNG files in /config/www/:
 
 Grid icon: grid-icon.png
@@ -53,7 +54,7 @@ Icons not showing	Make sure grid-icon.png and home-icon.png exist in /config/www
 
 ### HACS (custom repository)
 1. In HACS, go to **Integrations → ⋮ → Custom repositories**
-2. Paste: `https://github.com/thekhan1122/ha-k-flow-card`
+2. Paste: `https://github.com/thekhan1122/k-flow-card`
 3. Category: **Lovelace**
 4. Install the card – the resource is added automatically.
 
