@@ -93,3 +93,84 @@ batt_dis: sensor.goodwe_today_battery_discharge
 
 # Optional: alternate grid sensor
 # grid_power_alt: sensor.grid_phase_a_power
+
+
+🧩 Dual‑Battery Support (optional)
+If you have two batteries and want them displayed side‑by‑side in the same battery icon, use the dual‑battery variant of the card.
+
+1. Download the dual‑battery file
+Download k-flow-card-dual.js from this repository.
+
+2. Replace the standard file
+Copy the downloaded file into your /config/www/ folder and rename it to k-flow-card.js (overwrite the existing one).
+
+The card type remains custom:k-flow-card – no YAML changes needed for the type.
+
+3. Add second‑battery entities to your card configuration
+Add any of these optional fields to your card YAML:
+
+yaml
+battery2_soc: sensor.battery2_soc
+battery2_power: sensor.battery2_power
+battery2_current: sensor.battery2_current
+battery2_voltage: sensor.battery2_voltage
+battery2_temp1: sensor.battery2_temp1
+battery2_temp2: sensor.battery2_temp2
+battery2_mos: sensor.battery2_mos
+battery2_min_cell: sensor.battery2_min_cell
+battery2_max_cell: sensor.battery2_max_cell
+battery2_rem_cap: sensor.battery2_remain
+battery2_batt_dis: sensor.battery2_discharge
+battery2_batt_chg: sensor.battery2_charge   # optional
+
+If you leave any second‑battery field empty, the card automatically hides that part and behaves like the standard single‑battery version.
+
+💡 You can return to the standard version at any time by downloading the original k-flow-card.js and replacing the file again.
+
+🧩 Supported Entities
+
+Any numeric Home Assistant sensor can be used.
+The card includes fallbacks (e.g. GoodWe SOC is used if the BMS SOC is unavailable).
+
+🎨 Colour Logic & Animations
+
+Power bar (Pwr)
+
+< 50 W → grey
+
+Charging → blue
+
+Discharging → yellow‑orange‑red gradient based on power level
+
+Flow line speeds
+
+Idle (< 10 W) → hidden
+
+Active → duration = max(0.5, 3.0 – (min(|watts|,8000)/8000) × 2.5) seconds
+
+Grid lines always red, Battery lines follow the same colour logic as the Pwr bar.
+
+Home line changes colour depending on the dominant source.
+
+Sun arc wave constant speed, colour and density adapt to PV power.
+
+Battery fill colour‑coded SOC with glossy gradients (red, orange, green, cyan).
+
+🐞 Troubleshooting
+
+Symptom	Solution
+
+“Custom element doesn’t exist”
+Verify the resource URL /local/k-flow-card.js and type JavaScript Module.
+All values show “--” or NaN
+Check that the sensor IDs exist and return numeric values.
+Animations not playing
+Ensure the browser tab is active; some browsers pause SVG animations in background tabs.
+Grid / Home icons not visible
+Place grid-icon.png and home-icon.png in /config/www/ (or use your own) – the card expects them at /local/grid-icon.png and /local/home-icon.png.
+PV arc label doesn’t match PV1+PV2
+The arc uses the pv_total_power sensor; make sure it is correct.
+
+📄 License
+MIT © Khan Automation
+
