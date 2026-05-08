@@ -154,21 +154,17 @@ home-icon.png
 If you don’t provide them, the icons will be blank. You can use any 110×110 px PNG (even a simple coloured square with a letter).
 The icons glow dynamically when power flows to/from the corresponding node.
 
-🐞 Troubleshooting
 
-Symptom	Solution
+## 🐞 Troubleshooting
 
-“Custom element doesn’t exist”
-Check resource URL is /local/k-flow-card.js and type is JavaScript Module.
+| Symptom | Solution |
+|---------|----------|
+| **“Custom element doesn’t exist”** | Verify the resource URL `/local/k-flow-card.js` and type **JavaScript Module**. |
+| **All values show “--” or NaN** | Check that the sensor IDs exist and return numeric values. |
+| **PV arc label doesn’t match PV1+PV2** | The arc uses `pv_total_power`. If it’s wrong, use the multi‑PV variant or sum strings with a template sensor. |
+| **Grid / Home icons not visible** | Place `grid-icon.png` and `home-icon.png` in `/config/www/`. |
+| **Animations not playing** | Keep the browser tab active; some browsers pause SVG animations. |
+| **Buttons (relay, grid, zigbee) unresponsive** | This card doesn’t handle switches – use the companion **k‑sensors‑card** for controls. |
+| **Dual battery not showing** | Make sure you’re using `k-flow-card-dual.js` and that `battery2_soc` is set. |
+| **Card stacks vertically instead of three columns** | Remove `max-width:520px` from the card’s `.js` file or use `card_mod` to override it. |
 
-All values show “--” or NaN	   The sensor IDs don’t match your system –      verify them in the YAML.
-
-PV arc label doesn’t match PV1+PV2	  The arc uses pv_total_power. If it’s wrong, use the multi‑PV variant or sum strings with a template sensor.
-
-Grid / Home icons missing	     Place grid-icon.png and home-icon.png in /config/www/.
-
-Animations not playing	The browser tab must be active; some browsers pause SVG animations in background tabs.
-
-Buttons (relay, grid, zigbee) not working	This card doesn’t handle switches – use the companion k‑sensors‑card for controls.
-
-Dual battery not showing	Make sure you’re using k-flow-card-dual.js and that battery2_soc is set.
