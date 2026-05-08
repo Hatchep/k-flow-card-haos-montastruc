@@ -1,70 +1,53 @@
-# ⚡ K‑Flow Card for Home Assistant version 1.0.5
+# ⚡ K‑Flow Card for Home Assistant
 
 A real‑time, animated energy flow dashboard card – monitor solar, battery, grid, and home consumption with a sleek SVG diagram.
 
-<img width="1132" height="1603" alt="Screenshot_2026-05-05-19-02-17-29_cbf47468f7ecfbd8ebcc46bf9cc626da" src="https://github.com/user-attachments/assets/90b301cb-ae96-444e-a161-87cc83982be3" />
+!
 
-<img width="1130" height="1610" alt="Screenshot_2026-05-05-19-06-37-85_cbf47468f7ecfbd8ebcc46bf9cc626da" src="https://github.com/user-attachments/assets/908209a4-b845-42a9-a5ef-ded329020fe3" />
-
+---
 
 ## ✨ Features
 
-- **Real‑time updates** via `hass.states` – no long‑lived token needed
-- **Animated sun arc** with dynamic sky colours and moon (day/night cycle)
-- **Variable‑speed flow lines** (Grid, Battery, Home) – speed changes with power
-- **Battery fill** with colour‑coded SOC (red → orange → green → cyan)
-- **PV block bar** and **Power bar** with correct colour logic
-- **GoodWe inverter summary** + temperature / cell data
-- **Custom PNG icons** for Grid and Home (you can replace them)
-- **Fully configurable** – every entity ID can be changed in the YAML editor
+- Real‑time data via `hass.states` – **no long‑lived token required**
+- Animated sun arc with dynamic sky colours and moon
+- Variable‑speed flow lines (Grid, Battery, Home)
+- Battery fill with colour‑coded SOC
+- PV block bar, Power bar, inverter summary, temperature & cell data
+- Fully configurable entities via YAML editor
+- Optional **dual‑battery** support (two compartments in one icon)
+- Optional **multi‑PV** support (up to 4 strings, auto‑total if combined sensor missing)
+- Custom grid & home icons (PNG)
 
-
-🧩 Supported Entities.                                                
-
-Any numeric sensor works. The card uses fallbacks (e.g., GoodWe SOC if BMS SOC unavailable).
-
-🎨 Custom Icons
-
-Replace the Grid and Home icons by placing your own PNG files in /config/www/:
-
-Grid icon: grid-icon.png
-
-Home icon: home-icon.png
-
-You can adjust their size and position by editing the corresponding <image> tags inside the card’s JavaScript (lines ~570 and ~580).
-
-🐞 Troubleshooting
-
-Symptom	Solution
-"Custom element doesn't exist"	Check resource URL (/local/k-flow-card.js) and type (JavaScript Module).
-All values show “--” or NaN	Verify that the sensor IDs exist and return numeric values.
-Animations not playing	Ensure the browser tab is active; some browsers pause SVG animations in background tabs.
-Icons not showing	Make sure grid-icon.png and home-icon.png exist in /config/www/.
+---
 
 ## 🛠 Installation
 
 ### Manual
-1. Download `k-flow-card.js`
-2. Place it in your `config/www` folder
+1. Download the desired variant (see below) and rename it to `k-flow-card.js`.
+2. Place it in your `config/www` folder.
 3. Add it as a **module** resource:
-   - **Settings → Dashboards → ⋮ → Resources → + Add Resource**
+   - **Settings → Dashboards → Resources → + Add Resource**
    - URL: `/local/k-flow-card.js`
    - Type: **JavaScript Module**
-4. Refresh your dashboard (F5 / Ctrl+Shift+R)
+4. Reload your dashboard (F5).
 
 ### HACS (custom repository)
-1. In HACS, go to **Integrations → ⋮ → Custom repositories**
-2. Paste: `https://github.com/thekhan1122/k-flow-card`
-3. Category: **Lovelace**
+1. In HACS, go to **Frontend → ⋮ → Custom repositories**.
+2. Paste `https://github.com/thekhan1122/k-flow-card` (without `.git`).
+3. Category: **Lovelace**.
 4. Install the card – the resource is added automatically.
 
-## ⚙️ Card Configuration
+> ⚠️ The default HACS installation provides the **standard single‑battery, two‑PV version** (`k-flow-card.js`).  
+> For dual‑battery or up to 4 PV strings, replace the file manually (see below).
 
-Add a **Manual** card with the YAML below (edit the entity IDs to match your system):
+---
+
+## 📋 Card Configuration
+
+Add a **Manual** card with the following YAML (edit entity IDs to match your system):
 
 ```yaml
 type: custom:k-flow-card
-# Solar / Inverter
 pv1_power: sensor.goodwe_pv1_power
 pv2_power: sensor.goodwe_pv2_power
 pv_total_power: sensor.goodwe_pv_power
@@ -74,8 +57,6 @@ consump: sensor.goodwe_house_consumption
 today_pv: sensor.goodwe_today_s_pv_generation
 today_batt_chg: sensor.goodwe_today_battery_charge
 today_load: sensor.goodwe_today_load
-
-# Battery (JK‑BMS / GoodWe fallbacks)
 battery_soc: sensor.jk_soc
 battery_power: sensor.jk_power
 battery_current: sensor.jk_current
@@ -90,87 +71,3 @@ goodwe_battery_soc: sensor.goodwe_battery_state_of_charge
 goodwe_battery_curr: sensor.goodwe_battery_current
 inv_temp: sensor.goodwe_inverter_temperature_module
 batt_dis: sensor.goodwe_today_battery_discharge
-
-# Optional: alternate grid sensor
-# grid_power_alt: sensor.grid_phase_a_power
-
-
-🧩 Dual‑Battery Support (optional)
-If you have two batteries and want them displayed side‑by‑side in the same battery icon, use the dual‑battery variant of the card.
-
-1. Download the dual‑battery file
-Download k-flow-card-dual.js from this repository.
-
-2. Replace the standard file
-Copy the downloaded file into your /config/www/ folder and rename it to k-flow-card.js (overwrite the existing one).
-
-The card type remains custom:k-flow-card – no YAML changes needed for the type.
-
-3. Add second‑battery entities to your card configuration
-Add any of these optional fields to your card YAML:
-
-yaml
-battery2_soc: sensor.battery2_soc
-battery2_power: sensor.battery2_power
-battery2_current: sensor.battery2_current
-battery2_voltage: sensor.battery2_voltage
-battery2_temp1: sensor.battery2_temp1
-battery2_temp2: sensor.battery2_temp2
-battery2_mos: sensor.battery2_mos
-battery2_min_cell: sensor.battery2_min_cell
-battery2_max_cell: sensor.battery2_max_cell
-battery2_rem_cap: sensor.battery2_remain
-battery2_batt_dis: sensor.battery2_discharge
-battery2_batt_chg: sensor.battery2_charge   # optional
-
-If you leave any second‑battery field empty, the card automatically hides that part and behaves like the standard single‑battery version.
-
-💡 You can return to the standard version at any time by downloading the original k-flow-card.js and replacing the file again.
-
-🧩 Supported Entities
-
-Any numeric Home Assistant sensor can be used.
-The card includes fallbacks (e.g. GoodWe SOC is used if the BMS SOC is unavailable).
-
-🎨 Colour Logic & Animations
-
-Power bar (Pwr)
-
-< 50 W → grey
-
-Charging → blue
-
-Discharging → yellow‑orange‑red gradient based on power level
-
-Flow line speeds
-
-Idle (< 10 W) → hidden
-
-Active → duration = max(0.5, 3.0 – (min(|watts|,8000)/8000) × 2.5) seconds
-
-Grid lines always red, Battery lines follow the same colour logic as the Pwr bar.
-
-Home line changes colour depending on the dominant source.
-
-Sun arc wave constant speed, colour and density adapt to PV power.
-
-Battery fill colour‑coded SOC with glossy gradients (red, orange, green, cyan).
-
-🐞 Troubleshooting
-
-Symptom	Solution
-
-“Custom element doesn’t exist”
-Verify the resource URL /local/k-flow-card.js and type JavaScript Module.
-All values show “--” or NaN
-Check that the sensor IDs exist and return numeric values.
-Animations not playing
-Ensure the browser tab is active; some browsers pause SVG animations in background tabs.
-Grid / Home icons not visible
-Place grid-icon.png and home-icon.png in /config/www/ (or use your own) – the card expects them at /local/grid-icon.png and /local/home-icon.png.
-PV arc label doesn’t match PV1+PV2
-The arc uses the pv_total_power sensor; make sure it is correct.
-
-📄 License
-MIT © Khan Automation
-
