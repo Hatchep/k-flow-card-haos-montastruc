@@ -3,7 +3,15 @@ markdown
 
 Animated energy flow dashboard card – solar, battery, grid, home – real‑time, no token needed.
 
-![Screenshot](screenshot.png)
+## 📸 Gallery
+
+| Standard | Dual Battery |
+|----------|--------------|
+| ![Standard](standard.png) | ![Dual Battery](dual-battery.png) |
+
+| Multi PV (4 strings) | Mobile view |
+|----------------------|-------------|
+| ![Multi PV](multi-pv.png) | ![Mobile](mobile.png) |
 
 ---
 
@@ -52,6 +60,7 @@ batt_dis: sensor.goodwe_today_battery_discharge
 ---
 
 🧩 Card Variants
+
 The repository contains three versions. Choose the one that fits your setup, rename it to k-flow-card.js, and replace the file.
 
 Variant	File	Description
