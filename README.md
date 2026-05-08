@@ -63,9 +63,17 @@ The repository contains three versions. Choose the one that fits your setup, ren
 
 Variant	File	Description
 
-Standard	k-flow-card.js	Single battery, PV1/PV2. Uses pv_total_power or sums PV1+PV2 if missing.
-Dual Battery	k-flow-card-dual.js	Same as standard, but with two battery compartments in one shell. Second battery is optional – no entities = hides.
-Multi PV (4 strings)	k-flow-card-pv4.js	Single battery, supports PV1–PV4. Auto‑calculates total PV when pv_total_power is missing/zero.
+Standard	k-flow-card.js
+
+Single battery, PV1/PV2. Uses pv_total_power or sums PV1+PV2 if missing.
+
+Dual Battery	k-flow-card-dual.js	
+
+Same as standard, but with two battery compartments in one shell. Second battery is optional – no entities = hides.
+Multi PV (4 strings)	k-flow-card-pv4.js	
+
+Single battery, supports PV1–PV4. Auto‑calculates total PV when pv_total_power is missing/zero.
+
 All variants use the same card type custom:k-flow-card – no YAML changes needed when switching files.
 
 🔋 Dual Battery (optional)
@@ -151,10 +159,18 @@ The icons glow dynamically when power flows to/from the corresponding node.
 🐞 Troubleshooting
 
 Symptom	Solution
-“Custom element doesn’t exist”	Check resource URL is /local/k-flow-card.js and type is JavaScript Module.
-All values show “--” or NaN	The sensor IDs don’t match your system – verify them in the YAML.
-PV arc label doesn’t match PV1+PV2	The arc uses pv_total_power. If it’s wrong, use the multi‑PV variant or sum strings with a template sensor.
-Grid / Home icons missing	Place grid-icon.png and home-icon.png in /config/www/.
+
+“Custom element doesn’t exist”
+Check resource URL is /local/k-flow-card.js and type is JavaScript Module.
+
+All values show “--” or NaN	   The sensor IDs don’t match your system –      verify them in the YAML.
+
+PV arc label doesn’t match PV1+PV2	  The arc uses pv_total_power. If it’s wrong, use the multi‑PV variant or sum strings with a template sensor.
+
+Grid / Home icons missing	     Place grid-icon.png and home-icon.png in /config/www/.
+
 Animations not playing	The browser tab must be active; some browsers pause SVG animations in background tabs.
+
 Buttons (relay, grid, zigbee) not working	This card doesn’t handle switches – use the companion k‑sensors‑card for controls.
+
 Dual battery not showing	Make sure you’re using k-flow-card-dual.js and that battery2_soc is set.
