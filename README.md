@@ -48,7 +48,7 @@ goodwe_battery_soc: sensor.goodwe_battery_state_of_charge
 goodwe_battery_curr: sensor.goodwe_battery_current
 inv_temp: sensor.goodwe_inverter_temperature_module
 batt_dis: sensor.goodwe_today_battery_discharge
-
+```
 ---
 
 🧩 Card Variants
@@ -67,7 +67,7 @@ To use the dual‑battery variant (k-flow-card-dual.js), add these optional enti
 
 ---
 
-yaml
+```yaml
 battery2_soc: sensor.battery2_soc
 battery2_power: sensor.battery2_power
 battery2_current: sensor.battery2_current
@@ -80,6 +80,8 @@ battery2_max_cell: sensor.battery2_max_cell
 battery2_rem_cap: sensor.battery2_remain
 battery2_batt_dis: sensor.battery2_discharge
 battery2_batt_chg: sensor.battery2_charge   # optional
+```
+
 All second‑battery fields are optional. If left empty, the second compartment is hidden and the card works like the standard version.
 
 ---
@@ -90,10 +92,10 @@ If your inverter only reports separate PV strings, use k-flow-card-pv4.js. It su
 Add the extra entities:
 ---
 
-yaml
+```yaml
 pv3_power: sensor.goodwe_pv3_power
 pv4_power: sensor.goodwe_pv4_power
-
+```
 ---
 
 How total PV works:
