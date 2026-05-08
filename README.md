@@ -1,3 +1,4 @@
+
 markdown
 # ⚡ K‑Flow Card for Home Assistant
 
@@ -7,11 +8,14 @@ Animated energy flow dashboard card – solar, battery, grid, home – real‑ti
 
 | Standard | Dual Battery |
 |----------|--------------|
-| ![Standard](standard.png) | ![Dual Battery](dual-battery.png) |
+| ![Standard]![Uploading standard.png.jpg…]()
+<img width="1110" height="1624" alt="multi-pv png" src="https://github.com/user-attachments/assets/9d0995db-7b87-401a-b200-01d38706003e" />
+ | ![Dual Battery](dual-battery.png) |
 
 | Multi PV (4 strings) | Mobile view |
 |----------------------|-------------|
-| ![Multi PV](multi-pv.png) | ![Mobile](mobile.png) |
+| ![Multi PV]<img width="1110" height="1624" alt="multi-pv png" src="https://github.com/user-attachments/assets/d1382644-1ad1-4e87-b4b1-fe3d21846501" />
+ | ![Mobile](mobile.png) |
 
 ---
 
