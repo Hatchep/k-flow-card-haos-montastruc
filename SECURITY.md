@@ -3,8 +3,6 @@
 
 This card runs entirely in the browser and does **not** collect, store, or transmit any data.  
 It uses the Home Assistant frontend’s built‑in `hass` object – no long‑lived tokens, no external network calls.
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
 
 | Version | Supported          |
 |---------|--------------------|
