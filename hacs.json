@@ -1,0 +1,8 @@
+{
+  "name": "k-flow-card",
+  "filename": "k-flow-card.js",
+  "render_readme": true,
+  "content_in_root": true,
+  "homeassistant": "2023.0.0",
+  "hacs": "1.34.0"
+}
