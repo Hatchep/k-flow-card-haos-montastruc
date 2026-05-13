@@ -34,7 +34,7 @@ k-flow-card visualises the live power flow between your solar panels, battery, i
 2. Click the **⋮ menu** (top-right) → **Custom repositories**.
 3. Paste `https://github.com/thekhan1122/k-flow-card`, select category **Lovelace**, click **Add**.
 4. Search for **k-flow-card** and click **Download**.
-5. HACS downloads all files — the card JS and all icons — into `/config/www/community/k-flow-card/`. **No manual file copying is needed.**
+5. HACS downloads all files — the card JS and all icons — into `/config/www/community/k-flow-card/`. **if image not load then manual icon png file copying is needed.**
 
 6. **Hard-refresh** your browser (`Ctrl + Shift + R` / `Cmd + Shift + R`).
 
