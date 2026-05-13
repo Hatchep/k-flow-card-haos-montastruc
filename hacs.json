@@ -1,6 +1,11 @@
 {
   "name": "k-flow-card",
   "filename": "k-flow-card.js",
+  "extra_files": [
+    "home-icon.png",
+    "grid-icon.png",
+    "ev-charger-icon.png"
+  ],
   "render_readme": true,
   "content_in_root": true,
   "homeassistant": "2023.0.0",
