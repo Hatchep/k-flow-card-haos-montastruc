@@ -1,6 +1,6 @@
 # ⚡ k-flow-card
 
-> **Repository:** https://github.com/YOUR_USERNAME/k-flow-card
+> **Repository:** https://github.com/thekhan1122/k-flow-card
 
 **A beautiful real-time solar energy flow card for Home Assistant.**
 
@@ -20,6 +20,9 @@ k-flow-card visualises the live power flow between your solar panels, battery, i
 - Grid import / export energy totals
 - Full visual editor — no YAML required
 - Animated glowing icons with directional flow arrows
+<img width="1708" height="2520" alt="sc3" src="https://github.com/user-attachments/assets/864a963a-0bb2-4ba8-957d-2d553db64506" />
+<img width="1737" height="2544" alt="sc2" src="https://github.com/user-attachments/assets/37b1e321-906b-45fc-bacc-539b098155b2" />
+<img width="1726" height="2536" alt="sc1" src="https://github.com/user-attachments/assets/f8ec01b1-0057-465c-8901-19bc17ee907e" />
 
 ---
 
@@ -29,9 +32,10 @@ k-flow-card visualises the live power flow between your solar panels, battery, i
 
 1. Open **HACS** in Home Assistant → **Frontend**.
 2. Click the **⋮ menu** (top-right) → **Custom repositories**.
-3. Paste `https://github.com/YOUR_USERNAME/k-flow-card`, select category **Lovelace**, click **Add**.
+3. Paste `https://github.com/thekhan1122/k-flow-card`, select category **Lovelace**, click **Add**.
 4. Search for **k-flow-card** and click **Download**.
 5. HACS downloads all files — the card JS and all icons — into `/config/www/community/k-flow-card/`. **No manual file copying is needed.**
+
 6. **Hard-refresh** your browser (`Ctrl + Shift + R` / `Cmd + Shift + R`).
 
 > HACS registers the resource automatically. You do **not** need to add it manually in the dashboard settings.
@@ -40,7 +44,7 @@ k-flow-card visualises the live power flow between your solar panels, battery, i
 
 ### Option B — Manual Installation
 
-1. Download the following files from the [repository](https://github.com/YOUR_USERNAME/k-flow-card):
+1. Download the following files from the [repository](https://github.com/thekhan1122/k-flow-card):
    - `k-flow-card.js`
    - `home-icon.png`
    - `grid-icon.png`
