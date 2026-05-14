@@ -1,5 +1,6 @@
 {
-  "name": "k-flow-card",
+  "name": "k-flow-card-haos-montastruc",
+  "filename": "k-flow-card.js",
   "content_type": "plugin",
   "render_readme": true,
   "homeassistant": "2023.0.0",
