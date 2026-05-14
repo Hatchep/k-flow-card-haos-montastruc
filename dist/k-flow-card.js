@@ -1,4 +1,4 @@
-// k-flow-card.js – Unified Edition v7.0.6 (Final)
+// k-flow-card.js – Unified Edition v7.1.1
 // Fixes:
 //   - Inverter name, system limits, EV battery capacity now use
 //     explicit <ha-textfield> inputs (impossible to miss).
@@ -55,13 +55,15 @@ class KFlowCardEditor extends HTMLElement {
     if (this._config[key] === value) return;
     this._config = { ...this._config, [key]: value };
     this._fireChanged();
-    if (key === '_show_battery2' || key === '_show_pv_extra' || key === '_show_ev' || key === '_show_limits')
+    if (key === '_show_battery' || key === '_show_battery2' || key === '_show_pv_extra' || key === '_show_ev' || key === '_show_limits')
       this._render();
   }
 
   _render() {
     if (!this._hass) return;
+    if (!this._sectionOpen) this._sectionOpen = {};
     const cfg = this._config;
+    const showBatt1 = !!(cfg._show_battery !== false);
     const showBatt2 = !!(cfg._show_battery2);
     const showPVExtra = !!(cfg._show_pv_extra);
     const showEV = !!(cfg._show_ev);
@@ -141,20 +143,47 @@ class KFlowCardEditor extends HTMLElement {
     const shell = document.createElement('div');
     shell.innerHTML = style;
 
-    const makeSection = (icon, title, rows, opts = {}) => {
+    const makeSection = (sectionId, icon, title, rows, opts = {}) => {
+      if (this._sectionOpen[sectionId] === undefined) this._sectionOpen[sectionId] = false;
+      const isOpen = this._sectionOpen[sectionId];
       const sec = document.createElement('div');
       sec.className = 'section';
       const hdr = document.createElement('div');
-      hdr.className = 'section-header' + (opts.toggleKey ? ' toggleable' : '');
+      hdr.className = 'section-header toggleable';
+      // Chevron — styled as a small disclosure button
+      const chevron = document.createElement('span');
+      chevron.textContent = isOpen ? '▼' : '▶';
+      chevron.style.cssText = [
+        'display:inline-flex',
+        'align-items:center',
+        'justify-content:center',
+        'width:20px',
+        'height:20px',
+        'min-width:20px',
+        'border-radius:5px',
+        'background:var(--secondary-background-color,rgba(255,255,255,.07))',
+        'border:1px solid var(--divider-color,rgba(255,255,255,.15))',
+        'font-size:.7rem',
+        'line-height:1',
+        `color:${isOpen ? 'var(--primary-color,#03a9f4)' : 'var(--secondary-text-color,#aaa)'}`,
+        'flex-shrink:0',
+        'transition:color .15s,background .15s',
+        'cursor:pointer',
+        'user-select:none',
+      ].join(';');
+      hdr.appendChild(chevron);
       const titleSpan = document.createElement('span');
       titleSpan.textContent = `${icon} ${title}`;
       hdr.appendChild(titleSpan);
+      // Click anywhere on header (except toggle-chip) to collapse/expand
+      hdr.addEventListener('click', () => {
+        this._sectionOpen[sectionId] = !this._sectionOpen[sectionId];
+        this._render();
+      });
       if (opts.toggleKey) {
         const chip = document.createElement('span');
         chip.className = 'toggle-chip' + (opts.toggleOn ? ' on' : '');
-        chip.innerHTML = opts.toggleOn
-          ? `<ha-icon icon="mdi:check-circle" style="--mdc-icon-size:14px"></ha-icon> Enabled`
-          : `<ha-icon icon="mdi:plus-circle-outline" style="--mdc-icon-size:14px"></ha-icon> Enable`;
+        chip.innerHTML = opts.toggleOn ? `✓ Enabled` : `＋ Enable`;
         chip.addEventListener('click', (e) => {
           e.stopPropagation();
           this._set(opts.toggleKey, !opts.toggleOn);
@@ -162,7 +191,9 @@ class KFlowCardEditor extends HTMLElement {
         hdr.appendChild(chip);
       }
       sec.appendChild(hdr);
-      if (!opts.hidden) {
+      // Body visible when section is open AND content not suppressed by toggle
+      const bodyVisible = isOpen && !opts.hidden;
+      if (bodyVisible) {
         const body = document.createElement('div');
         body.className = 'section-body';
         rows.forEach(r => body.appendChild(r));
@@ -279,6 +310,49 @@ class KFlowCardEditor extends HTMLElement {
       return wrap;
     };
 
+
+    // Native CSS pill toggle
+    const switchRow = (key, labelText, hintText = '') => {
+      const wrap = document.createElement('div');
+      wrap.className = 'row';
+      wrap.style.cssText = 'margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;';
+      const left = document.createElement('div');
+      left.style.flex = '1';
+      const lbl = document.createElement('div');
+      lbl.className = 'row-label';
+      lbl.style.marginBottom = '2px';
+      lbl.textContent = labelText;
+      left.appendChild(lbl);
+      if (hintText) {
+        const hint = document.createElement('div');
+        hint.style.cssText = 'font-size:.68rem;color:var(--secondary-text-color);line-height:1.4;';
+        hint.textContent = hintText;
+        left.appendChild(hint);
+      }
+      const pillLabel = document.createElement('label');
+      pillLabel.style.cssText = 'position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0;cursor:pointer;';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = !!cfg[key];
+      cb.style.cssText = 'opacity:0;width:0;height:0;position:absolute;';
+      const track = document.createElement('span');
+      const knob  = document.createElement('span');
+      const sync = () => {
+        track.style.cssText = 'position:absolute;inset:0;border-radius:11px;transition:background .2s;background:' +
+          (cb.checked ? 'var(--primary-color,#03a9f4)' : 'var(--divider-color,rgba(0,0,0,.25))') + ';';
+        knob.style.cssText  = 'position:absolute;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;' +
+          'box-shadow:0 1px 3px rgba(0,0,0,.35);transition:left .2s;left:' + (cb.checked ? '21px' : '3px') + ';';
+      };
+      sync();
+      cb.addEventListener('change', () => { sync(); this._set(key, cb.checked); });
+      pillLabel.appendChild(cb);
+      pillLabel.appendChild(track);
+      pillLabel.appendChild(knob);
+      wrap.appendChild(left);
+      wrap.appendChild(pillLabel);
+      return wrap;
+    };
+
     const divider = () => {
       const d = document.createElement('div');
       d.className = 'divider';
@@ -286,21 +360,21 @@ class KFlowCardEditor extends HTMLElement {
     };
 
     // ═══ Build sections ═══
-    shell.appendChild(makeSection('⚙️', 'General', [
+    shell.appendChild(makeSection('general', '⚙️', 'General', [
       textField('inverter_name', 'Inverter Name', 'e.g. My Inverter'),
     ]));
 
-    shell.appendChild(makeSection('☀️', 'Solar', [
+    shell.appendChild(makeSection('solar', '☀️', 'Solar', [
       picker('pv1_power', 'PV1 Power'),
       picker('pv2_power', 'PV2 Power'),
     ]));
 
-    shell.appendChild(makeSection('☀️', 'Extra PV Strings', [
+    shell.appendChild(makeSection('solar_extra', '☀️', 'Extra PV Strings', [
       picker('pv3_power', 'PV3 Power', true),
       picker('pv4_power', 'PV4 Power', true),
     ], { toggleKey: '_show_pv_extra', toggleOn: showPVExtra, hidden: !showPVExtra }));
 
-    shell.appendChild(makeSection('☀️', 'Solar Extras', [
+    shell.appendChild(makeSection('solar_extras', '☀️', 'Solar Extras', [
       picker('pv_total_power',  'Total PV Power',  true),
       divider(),
       picker('inv_temp',        'Inverter Temp'),
@@ -310,14 +384,16 @@ class KFlowCardEditor extends HTMLElement {
       picker('consump',         'House Consumption'),
     ]));
 
-    shell.appendChild(makeSection('🔌', 'Grid', [
+    shell.appendChild(makeSection('grid', '🔌', 'Grid', [
       picker('grid_active_power',  'Grid Active Power'),
       picker('grid_import_energy', 'Grid Import Energy'),
       picker('grid_export_energy', 'Grid Export Energy', true),
       picker('grid_power_alt',     'Alt Grid Sensor',    true),
     ]));
 
-    shell.appendChild(makeSection('🔋', 'Primary Battery', [
+    shell.appendChild(makeSection('battery1', '🔋', 'Primary Battery', [
+      switchRow('invert_battery_power', '🔄 Invert battery power sign', 'Enable if positive = discharging'),
+      divider(),
       picker('battery_soc',      'Battery SOC'),
       picker('battery_power',    'Battery Power'),
       picker('battery_current',  'Battery Current'),
@@ -331,9 +407,11 @@ class KFlowCardEditor extends HTMLElement {
       divider(),
       picker('goodwe_battery_soc',  'Fallback SOC',     true),
       picker('goodwe_battery_curr', 'Fallback Current', true),
-    ]));
+    ], { toggleKey: '_show_battery', toggleOn: showBatt1, hidden: !showBatt1 }));
 
-    shell.appendChild(makeSection('🔋', 'Secondary Battery', [
+    shell.appendChild(makeSection('battery2', '🔋', 'Secondary Battery', [
+      switchRow('invert_battery_power', '🔄 Invert battery power sign', 'Shared with Primary'),
+      divider(),
       picker('battery2_soc',      'SOC'),
       picker('battery2_power',    'Power'),
       picker('battery2_current',  'Current'),
@@ -341,14 +419,14 @@ class KFlowCardEditor extends HTMLElement {
       picker('battery2_mos',      'BMS Temp'),
     ], { toggleKey: '_show_battery2', toggleOn: showBatt2, hidden: !showBatt2 }));
 
-    shell.appendChild(makeSection('⚙️', 'System Limits', [
+    shell.appendChild(makeSection('limits', '⚙️', 'System Limits', [
       numberField('battery_full_ah',    'Battery Capacity',  0, 2000,  1,   'Ah'),
       numberField('battery_full_wh',    'Battery Capacity',  0, 50000, 1,   'Wh'),
       numberField('inverter_max_power', 'Inverter Max Power',1000,20000,100, 'W'),
       numberField('pv_max_power',       'PV Max Power',      1000,30000,100, 'W'),
     ], { toggleKey: '_show_limits', toggleOn: showLimits, hidden: !showLimits }));
 
-    shell.appendChild(makeSection('🚗', 'EV / Car Charger', [
+    shell.appendChild(makeSection('ev', '🚗', 'EV / Car Charger', [
       picker('charger_state',           'Charger State'),
       picker('charger_power',           'Charger Power'),
       picker('charger_current',         'Charger Current'),
@@ -422,7 +500,9 @@ class KFlowCard extends HTMLElement {
       sun: 'sun.sun',
       inverter_name: '',
       grid_power_alt: 'sensor.grid_phase_a_power',
+      _show_battery: true,
       _show_battery2: false,
+      invert_battery_power: false,
       _show_pv_extra: false,   // combined toggle
       _show_ev: false,
       _show_limits: false,
@@ -453,6 +533,8 @@ class KFlowCard extends HTMLElement {
   }
 
   _socColor(p) { return p<=25?'#f85149':p<=50?'#f39c4b':p<=75?'#58a6ff':'#4CAF50'; }
+  _cellTempColor(t) { return t<=15?'#58a6ff':t<=35?'#3fb950':t<=45?'#f0883e':'#f85149'; }
+  _cellVoltColor(v) { if(v<=0.001)return'#8b949e'; if(v<3.0)return'#f85149'; if(v<3.1)return'#f39c4b'; if(v<3.4)return'#f4d03f'; if(v<=3.65)return'#3fb950'; return'#f85149'; }
   _tempColor(t) { return t<=25?'#3fb950':t<=45?'#f0883e':'#f85149'; }
   _remCapColor(p) { return p<=15?'#e34d4c':p<=30?'#f39c4b':p<=55?'#f4d03f':'#2ecc71'; }
   _fmtTime(h) { if(!isFinite(h)||h<=0) return'--';const hh=Math.floor(h),mm=Math.round((h-hh)*60);return hh+'h '+(mm<10?'0':'')+mm+'m'; }
@@ -503,6 +585,7 @@ class KFlowCard extends HTMLElement {
 
   _buildStaticSVG() {
     const dual = !!(this.config._show_battery2);
+    const showBatt1 = !!(this.config._show_battery !== false);
     const ev   = !!(this.config._show_ev);
     const showPvExtra = !!(this.config._show_pv_extra);
     const iconPath = '/local/community/k-flow-card';    // icons served from HACS community folder
@@ -527,16 +610,54 @@ class KFlowCard extends HTMLElement {
     // Battery current/power placed OUTSIDE the transformed group, above/below the flow bar (center y=175)
     const battTextSingle = `
       <text id="battPwrFlow" x="75" y="165" font-size="10" font-weight="600" fill="#cde">-- W</text>
-      <text id="battCurrFlow" x="75" y="185" font-size="10" font-weight="600" fill="#fff">-- A</text>
+      <text id="battCurrFlow" x="75" y="196" font-size="10" font-weight="600" fill="#fff">-- A</text>
     `;
     const battTextDual = `
       <text id="battPwrFlow1" x="75" y="158" font-size="10" font-weight="600" fill="#cde">-- W</text>
       <text id="battPwrFlow2" x="75" y="171" font-size="10" font-weight="600" fill="#cde">-- W</text>
-      <text id="battCurrFlow1" x="75" y="188" font-size="10" font-weight="600" fill="#fff">-- A</text>
-      <text id="battCurrFlow2" x="75" y="201" font-size="10" font-weight="600" fill="#fff">-- A</text>
+      <text id="battCurrFlow1" x="75" y="196" font-size="10" font-weight="600" fill="#fff">-- A</text>
+      <text id="battCurrFlow2" x="75" y="209" font-size="10" font-weight="600" fill="#fff">-- A</text>
     `;
 
     const batteryTip = `<rect x="75" y="126" width="18" height="4" rx="2" fill="url(#battCapGrad)"/>`;
+
+    // Battery visibility helpers – mirror EV charger pattern
+    const battGhostPath = showBatt1
+      ? `<path d="M 59,175 H 132 V 205 H 205" fill="none" stroke="#1e3a5f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.18"/>`
+      : '';
+    const battFlowPaths = showBatt1 ? `
+      <path id="flowBattIn" d="M 59,175 H 132 V 205 H 205" fill="none" stroke="#8b949e" stroke-width="3" stroke-linecap="round" stroke-dasharray="14 10" opacity="0" style="display:none"><animate attributeName="stroke-dashoffset" from="-24" to="0" dur="4.0s" repeatCount="indefinite"/></path>
+      <path id="flowBattOut" d="M 59,175 H 132 V 205 H 205" fill="none" stroke="#8b949e" stroke-width="3" stroke-linecap="round" stroke-dasharray="14 10" opacity="0" style="display:none"><animate attributeName="stroke-dashoffset" from="0" to="-24" dur="4.0s" repeatCount="indefinite"/></path>` : '';
+    const battIconSection = !showBatt1 ? '' : (
+      `<g transform="translate(-36.6, 25.4) scale(0.8)">
+        <g id="battIconWrap">
+          <rect x="49" y="135" width="70" height="132" rx="10" fill="url(#battShellGrad)"/>
+          ${batteryTip}
+          <rect x="51" y="258" width="66" height="9" rx="4" fill="url(#battCapGrad)"/>
+          <rect x="51" y="137" width="66" height="7" rx="4" fill="url(#battCapGrad)"/>
+          <rect x="49" y="135" width="70" height="132" rx="10" fill="url(#battGlassBody)" style="pointer-events:none"/>
+          <rect x="53" y="145" width="62" height="118" rx="8" fill="#0f1214"/>` +
+      (dual ? `
+            <rect id="battFillBar1" x="53" y="263" width="30" height="0" rx="0" fill="#3fb950" clip-path="url(#battBodyClipLeft)"/>
+            <rect id="battFillHL1" x="53" y="263" width="30" height="0" rx="0" fill="url(#battFillHighlight)" clip-path="url(#battBodyClipLeft)" style="pointer-events:none"/>
+            <rect id="battFillBar2" x="85" y="263" width="30" height="0" rx="0" fill="#3fb950" clip-path="url(#battBodyClipRight)"/>
+            <rect id="battFillHL2" x="85" y="263" width="30" height="0" rx="0" fill="url(#battFillHighlight)" clip-path="url(#battBodyClipRight)" style="pointer-events:none"/>
+            <g id="battBoltGroup1" opacity="0"><polygon points="72,176 64,195 70,195 66,215 78,193 72,193 80,176" fill="#1a4aff" stroke="rgba(100,150,255,.5)" stroke-width="0.8" filter="url(#battGlowBolt)"><animate attributeName="opacity" values="0.5;1;0.5" dur="1.0s" repeatCount="indefinite"/></polygon></g>
+            <g id="battBoltGroup2" opacity="0"><polygon points="104,176 96,195 102,195 98,215 110,193 104,193 112,176" fill="#1a4aff" stroke="rgba(100,150,255,.5)" stroke-width="0.8" filter="url(#battGlowBolt)"><animate attributeName="opacity" values="0.5;1;0.5" dur="1.0s" repeatCount="indefinite"/></polygon></g>
+            <text id="fcBattVal1" x="68" y="208" text-anchor="middle" font-size="14" font-weight="900" fill="#fff">--%</text>
+            <text id="fcBattVal2" x="100" y="208" text-anchor="middle" font-size="14" font-weight="900" fill="#fff">--%</text>
+            <text id="battVoltageFlow1" x="68" y="278" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">-- V</text>
+            <text id="battVoltageFlow2" x="100" y="278" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">-- V</text>
+          ` : `
+            <rect id="battFillBar" x="53" y="263" width="62" height="0" rx="0" fill="#3fb950" clip-path="url(#battBodyClip)"/>
+            <rect id="battFillHL" x="53" y="263" width="62" height="0" rx="0" fill="url(#battFillHighlight)" clip-path="url(#battBodyClip)" style="pointer-events:none"/>
+            <g id="battBoltGroup" opacity="0"><polygon points="86,176 74,199 82,199 77,223 93,195 85,195 97,176" fill="#1a4aff" stroke="rgba(100,150,255,.5)" stroke-width="0.8" filter="url(#battGlowBolt)"><animate attributeName="opacity" values="0.5;1;0.5" dur="1.0s" repeatCount="indefinite"/></polygon></g>
+            <text id="fcBattVal" x="84" y="211" text-anchor="middle" font-size="18" font-weight="900" fill="#fff">--%</text>
+            <text id="battVoltageFlow" x="84" y="285" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">-- V</text>
+          `) +
+      `</g>
+      </g>`
+    );
 
     this.shadowRoot.innerHTML = `<style>
       :host{display:block} @keyframes svgPulseOrange{0%,100%{filter:drop-shadow(0 0 5px #f39c4b)}50%{filter:drop-shadow(0 0 8px #f39c4bff)}}
@@ -577,6 +698,7 @@ class KFlowCard extends HTMLElement {
         <filter id="iconGlowOrange" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="10" result="b"/><feFlood flood-color="rgba(255,140,0,0.6)" result="c"/><feComposite in="c" in2="b" operator="in" result="d"/><feMerge><feMergeNode in="d"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         <filter id="iconGlowBlue" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="10" result="b"/><feFlood flood-color="rgba(30,144,255,0.6)" result="c"/><feComposite in="c" in2="b" operator="in" result="d"/><feMerge><feMergeNode in="d"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         <filter id="iconGlowGreen" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="10" result="b"/><feFlood flood-color="rgba(46,204,113,0.6)" result="c"/><feComposite in="c" in2="b" operator="in" result="d"/><feMerge><feMergeNode in="d"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="iconGlowYellow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="10" result="b"/><feFlood flood-color="rgba(255,230,0,0.7)" result="c"/><feComposite in="c" in2="b" operator="in" result="d"/><feMerge><feMergeNode in="d"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
       </defs>
       <ellipse id="skyAura" cx="260" cy="84" rx="230" ry="110" fill="url(#dynAuraG)"/>
       <path d="M 35,78 Q 260,-45 485,78 Z" fill="rgba(30,100,200,.05)"/>
@@ -602,54 +724,26 @@ class KFlowCard extends HTMLElement {
       <text id="arcPvLabelText" x="210" y="39" text-anchor="middle" fill="rgba(255,235,110,.98)" font-size="13" font-weight="800">0 W ⚡</text>
       <g id="pvFlowGroup"></g>
 
-      <path d="M 59,175 H 132 V 205 H 205" fill="none" stroke="#1e3a5f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.18"/>
+      ${battGhostPath}
       <path d="M 399,175 H 361 V 202 H 315" fill="none" stroke="#1e3a5f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.18"/>
-      <path d="M 260,265 V 326" fill="none" stroke="#1e3a5f" stroke-width="3" stroke-linecap="round" opacity="0.18"/>
+      <path d="M 260,265 V 358" fill="none" stroke="#1e3a5f" stroke-width="3" stroke-linecap="round" opacity="0.18"/>
 
-      <path id="flowGridIn" d="M 399,175 H 361 V 202 H 315" fill="none" stroke="#FF2929" stroke-width="3" stroke-linecap="round" stroke-dasharray="14 10" opacity="0" style="display:none"><animate attributeName="stroke-dashoffset" from="0" to="-24" dur="0.8s" repeatCount="indefinite"/></path>
-      <path id="flowGridOut" d="M 399,175 H 361 V 202 H 315" fill="none" stroke="#2ecc71" stroke-width="3" stroke-linecap="round" stroke-dasharray="14 10" opacity="0" style="display:none"><animate attributeName="stroke-dashoffset" from="-24" to="0" dur="0.8s" repeatCount="indefinite"/></path>
+      <path id="flowGridIn" d="M 432,175 H 361 V 202 H 315" fill="none" stroke="#FF2929" stroke-width="3" stroke-linecap="round" stroke-dasharray="14 10" opacity="0" style="display:none"><animate attributeName="stroke-dashoffset" from="0" to="-24" dur="0.8s" repeatCount="indefinite"/></path>
+      <path id="flowGridOut" d="M 432,175 H 361 V 202 H 315" fill="none" stroke="#2ecc71" stroke-width="3" stroke-linecap="round" stroke-dasharray="14 10" opacity="0" style="display:none"><animate attributeName="stroke-dashoffset" from="-24" to="0" dur="0.8s" repeatCount="indefinite"/></path>
 
-      <path id="flowBattIn" d="M 59,175 H 132 V 205 H 205" fill="none" stroke="#8b949e" stroke-width="3" stroke-linecap="round" stroke-dasharray="14 10" opacity="0" style="display:none"><animate attributeName="stroke-dashoffset" from="-24" to="0" dur="4.0s" repeatCount="indefinite"/></path>
-      <path id="flowBattOut" d="M 59,175 H 132 V 205 H 205" fill="none" stroke="#8b949e" stroke-width="3" stroke-linecap="round" stroke-dasharray="14 10" opacity="0" style="display:none"><animate attributeName="stroke-dashoffset" from="0" to="-24" dur="4.0s" repeatCount="indefinite"/></path>
+      ${battFlowPaths}
 
-      <path id="flowInvLoad" d="M 260,326 V 265" fill="none" stroke="#29c4f6" stroke-width="3" stroke-linecap="round" stroke-dasharray="14 10" opacity="0" style="display:none"><animate attributeName="stroke-dashoffset" from="-24" to="0" dur="0.8s" repeatCount="indefinite"/></path>
+      <path id="flowInvLoad" d="M 260,358 V 265" fill="none" stroke="#29c4f6" stroke-width="3" stroke-linecap="round" stroke-dasharray="14 10" opacity="0" style="display:none"><animate attributeName="stroke-dashoffset" from="-24" to="0" dur="0.8s" repeatCount="indefinite"/></path>
 
       <!-- Battery current/power placed above/below flow bar -->
-      ${dual ? battTextDual : battTextSingle}
+      ${showBatt1 ? (dual ? battTextDual : battTextSingle) : ''}
 
-      <g transform="translate(-36.6, 25.4) scale(0.8)">
-        <g id="battIconWrap">
-          <rect x="49" y="135" width="70" height="132" rx="10" fill="url(#battShellGrad)"/>
-          ${batteryTip}
-          <rect x="51" y="258" width="66" height="9" rx="4" fill="url(#battCapGrad)"/>
-          <rect x="51" y="137" width="66" height="7" rx="4" fill="url(#battCapGrad)"/>
-          <rect x="49" y="135" width="70" height="132" rx="10" fill="url(#battGlassBody)" style="pointer-events:none"/>
-          <rect x="53" y="145" width="62" height="118" rx="8" fill="#0f1214"/>`+
-          (dual?`
-            <rect id="battFillBar1" x="53" y="263" width="30" height="0" rx="0" fill="#3fb950" clip-path="url(#battBodyClipLeft)"/>
-            <rect id="battFillHL1" x="53" y="263" width="30" height="0" rx="0" fill="url(#battFillHighlight)" clip-path="url(#battBodyClipLeft)" style="pointer-events:none"/>
-            <rect id="battFillBar2" x="85" y="263" width="30" height="0" rx="0" fill="#3fb950" clip-path="url(#battBodyClipRight)"/>
-            <rect id="battFillHL2" x="85" y="263" width="30" height="0" rx="0" fill="url(#battFillHighlight)" clip-path="url(#battBodyClipRight)" style="pointer-events:none"/>
-            <g id="battBoltGroup1" opacity="0"><polygon points="72,176 64,195 70,195 66,215 78,193 72,193 80,176" fill="#1a4aff" stroke="rgba(100,150,255,.5)" stroke-width="0.8" filter="url(#battGlowBolt)"><animate attributeName="opacity" values="0.5;1;0.5" dur="1.0s" repeatCount="indefinite"/></polygon></g>
-            <g id="battBoltGroup2" opacity="0"><polygon points="104,176 96,195 102,195 98,215 110,193 104,193 112,176" fill="#1a4aff" stroke="rgba(100,150,255,.5)" stroke-width="0.8" filter="url(#battGlowBolt)"><animate attributeName="opacity" values="0.5;1;0.5" dur="1.0s" repeatCount="indefinite"/></polygon></g>
-            <text id="fcBattVal1" x="68" y="208" text-anchor="middle" font-size="14" font-weight="900" fill="#fff">--%</text>
-            <text id="fcBattVal2" x="100" y="208" text-anchor="middle" font-size="14" font-weight="900" fill="#fff">--%</text>
-            <text id="battVoltageFlow1" x="68" y="278" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">-- V</text>
-            <text id="battVoltageFlow2" x="100" y="278" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">-- V</text>
-          `:`
-            <rect id="battFillBar" x="53" y="263" width="62" height="0" rx="0" fill="#3fb950" clip-path="url(#battBodyClip)"/>
-            <rect id="battFillHL" x="53" y="263" width="62" height="0" rx="0" fill="url(#battFillHighlight)" clip-path="url(#battBodyClip)" style="pointer-events:none"/>
-            <g id="battBoltGroup" opacity="0"><polygon points="86,176 74,199 82,199 77,223 93,195 85,195 97,176" fill="#1a4aff" stroke="rgba(100,150,255,.5)" stroke-width="0.8" filter="url(#battGlowBolt)"><animate attributeName="opacity" values="0.5;1;0.5" dur="1.0s" repeatCount="indefinite"/></polygon></g>
-            <text id="fcBattVal" x="84" y="211" text-anchor="middle" font-size="18" font-weight="900" fill="#fff">--%</text>
-            <text id="battVoltageFlow" x="84" y="285" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">-- V</text>
-          `)+
-        `</g>
-      </g>
+      ${battIconSection}
 
       <g id="gridIconImg" transform="translate(399,133)" style="opacity:1"><image href="${iconPath}/grid-icon.png" x="0" y="0" width="121" height="121" preserveAspectRatio="xMidYMid meet"/></g>
-      <text id="fcGridVal" x="445" y="263" text-anchor="middle" font-size="13" font-weight="700" fill="#e05c00">-- W</text>
-      <text id="gridImportVal" x="395" y="163" text-anchor="end" font-size="10" font-weight="600" fill="#cde">-- kWh</text>
-      <text id="gridExportVal" x="395" y="178" text-anchor="end" font-size="10" font-weight="600" fill="#cde" style="display:none">-- kWh</text>
+      <text id="fcGridVal" x="445" y="260" text-anchor="middle" font-size="13" font-weight="700" fill="#e05c00">-- W</text>
+      <text id="gridImportVal" x="397" y="165" text-anchor="middle" font-size="10" font-weight="600" fill="#cde">-- kWh</text>
+      <text id="gridExportVal" x="397" y="192" text-anchor="middle" font-size="10" font-weight="600" fill="#cde" style="display:none">-- kWh</text>
 
       <rect id="fcInvRect" x="205" y="155" width="110" height="110" rx="18" fill="#161b22" stroke="#f4a93b" stroke-width="4"/>
       <text id="invNameLabel" x="260" y="203" text-anchor="middle" font-size="14" font-weight="800" fill="#f4a93b" letter-spacing="1">INV</text>
@@ -663,8 +757,8 @@ class KFlowCard extends HTMLElement {
       ${pv3txt}
       ${pv4txt}
 
-      <g id="homeIconImg" transform="translate(174,326)" style="opacity:1"><image href="${iconPath}/home-icon.png" x="0" y="0" width="143" height="143" preserveAspectRatio="xMidYMid meet"/></g>
-      <text id="fcLoadVal" x="329" y="377" font-size="13" font-weight="700" fill="#F7F6D3">-- W</text>
+      <g id="homeIconImg" transform="translate(179,339)" style="opacity:1"><image href="${iconPath}/home-icon.png" x="0" y="0" width="160" height="160" preserveAspectRatio="xMidYMid meet"/></g>
+      <text id="fcLoadVal" x="174" y="420" text-anchor="end" font-size="13" font-weight="700" fill="#F7F6D3">-- W</text>
       ${evtxt}
       </svg></div>`+
 
@@ -674,7 +768,7 @@ class KFlowCard extends HTMLElement {
       </div>
       <div class="dv"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:5px">
-        <div class="st"><div class="l">TEMP</div><div class="v" id="bTemp1">-- °C</div></div>
+        <div class="st"><div class="l">CELL TEMP MIN/MAX</div><div class="v" id="bTemp1">-- °C</div></div>
         <div class="st"><div class="l">BMS TEMP</div><div class="v" id="bTemp2">-- °C</div></div>
         <div class="st"><div class="l">ENDURANCE</div><div class="v" id="bEndurance">--</div></div>
       </div>
@@ -717,8 +811,10 @@ class KFlowCard extends HTMLElement {
     const todayBattChg = this._val(this.config.today_batt_chg) || 0;
     const todayLoad = this._val(this.config.today_load) || 0;
     const battSoc1 = this._val(this.config.battery_soc) || this._val(this.config.goodwe_battery_soc) || 0;
-    const battPwr1 = this._val(this.config.battery_power) || 0;
-    const battCurr1 = this._val(this.config.battery_current) || this._val(this.config.goodwe_battery_curr) || 0;
+    let battPwr1 = this._val(this.config.battery_power) || 0;
+    if (this.config.invert_battery_power) battPwr1 = -battPwr1;
+    let battCurr1 = this._val(this.config.battery_current) || this._val(this.config.goodwe_battery_curr) || 0;
+    if (this.config.invert_battery_power) battCurr1 = -battCurr1;
     const battVolt1 = this._val(this.config.battery_voltage) || 0;
     const temp1_1 = this._val(this.config.battery_temp1) || 0;
     const temp2_1 = this._val(this.config.battery_temp2) || 0;
@@ -738,8 +834,9 @@ class KFlowCard extends HTMLElement {
 
     const dual = !!(this.config._show_battery2);
     const battSoc2 = dual ? (this._val(this.config.battery2_soc) || 0) : 0;
-    const battPwr2 = dual ? (this._val(this.config.battery2_power) || 0) : 0;
-    const battCurr2 = dual ? (this._val(this.config.battery2_current) || 0) : 0;
+    let battPwr2 = dual ? (this._val(this.config.battery2_power) || 0) : 0;
+    let battCurr2 = dual ? (this._val(this.config.battery2_current) || 0) : 0;
+    if (dual && this.config.invert_battery_power) { battPwr2 = -battPwr2; battCurr2 = -battCurr2; }
     const battVolt2 = dual ? (this._val(this.config.battery2_voltage) || 0) : 0;
     const mos2 = dual ? (this._val(this.config.battery2_mos) || 0) : 0;
 
@@ -809,7 +906,7 @@ class KFlowCard extends HTMLElement {
     const battIconWrap = getEl('battIconWrap');
     if (battIconWrap) { battIconWrap.setAttribute('filter', absPwr1 >= 50 ? 'url(#iconGlowBlue)' : ''); }
     const gridImg = getEl('gridIconImg');
-    if (gridImg) { gridImg.style.opacity = Math.abs(gridActive) < 10 ? '0.4' : '1'; gridImg.setAttribute('filter', Math.abs(gridActive) >= 50 ? 'url(#iconGlowOrange)' : ''); }
+    if (gridImg) { gridImg.style.opacity = Math.abs(gridActive) < 10 ? '0.4' : '1'; gridImg.setAttribute('filter', gridActive >= 50 ? 'url(#iconGlowOrange)' : gridActive <= -50 ? 'url(#iconGlowYellow)' : ''); }
     const homeImg = getEl('homeIconImg');
     if (homeImg) { homeImg.style.opacity = load > 10 ? '1' : '0.7'; homeImg.setAttribute('filter', load > 10 ? 'url(#iconGlowOrange)' : ''); }
 
@@ -851,6 +948,12 @@ class KFlowCard extends HTMLElement {
       setText('bMaxCell', maxCell1.toFixed(3) + ' V');
       setText('bBattDis', battDis1 + ' kWh');
     }
+
+    // Color: cell temp and cell voltage tiles
+    const _bT1 = getEl('bTemp1'); if (_bT1) _bT1.style.color = this._cellTempColor(Math.max(temp1_1, temp2_1));
+    const _bT2 = getEl('bTemp2'); if (_bT2) _bT2.style.color = this._cellTempColor(dual ? Math.max(mos1, mos2) : mos1);
+    const _bMn = getEl('bMinCell'); if (_bMn) _bMn.style.color = this._cellVoltColor(minCell1);
+    const _bMx = getEl('bMaxCell'); if (_bMx) _bMx.style.color = this._cellVoltColor(maxCell1);
 
     // Endurance
     let endText = '--', endColor = '#8b949e';
@@ -979,5 +1082,6 @@ window.customCards.push({
   name: 'K-Flow Card',
   description: 'Solar Energy Flow Card',
   preview: true,
+  version: '7.1.1',
 });
 customElements.define('k-flow-card', KFlowCard);
