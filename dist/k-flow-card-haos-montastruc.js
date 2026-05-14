@@ -534,7 +534,8 @@ class KFlowCardEditor extends HTMLElement {
     this._rendered = true;
   }
 }
-customElements.define('k-flow-card-editor', KFlowCardEditor);
+// HAOS-MONTASTRUC: renamed editor tag to avoid conflict with upstream k-flow-card-editor
+customElements.define('k-flow-card-haos-montastruc-editor', KFlowCardEditor);
 
 // ═══════════════════════════════════════════════════════════════
 // MAIN CARD
@@ -622,7 +623,8 @@ class KFlowCard extends HTMLElement {
   }
 
   getCardSize() { return 8; }
-  static getConfigElement() { return document.createElement('k-flow-card-editor'); }
+  // HAOS-MONTASTRUC: editor tag renamed
+  static getConfigElement() { return document.createElement('k-flow-card-haos-montastruc-editor'); }
 
   setConfig(config) {
     // HAOS-MONTASTRUC: Victron-compatible aliases → upstream field names.
