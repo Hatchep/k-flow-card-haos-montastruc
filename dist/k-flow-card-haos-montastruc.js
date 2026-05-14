@@ -732,6 +732,24 @@ class KFlowCard extends HTMLElement {
     const rsDcVisible = !!this.config.pv_rs_dc;
     const pvRsDcBadge = rsDcVisible ? `<rect id="arcRsDcLabelRect" x="268" y="22" width="96" height="26" rx="13" fill="rgba(255,200,50,.22)" stroke="rgba(255,210,60,.5)" stroke-width="1.2" opacity="0.55"/><text id="arcRsDcLabelText" x="316" y="39" text-anchor="middle" fill="rgba(255,235,110,.85)" font-size="11" font-weight="700">RS DC —</text>` : '';
 
+    // HAOS-MONTASTRUC: Zone délestage live (Spec B' Task 4 — scan label surplus-consumer + marge/tier en pied)
+    // Visible si surplus_consumer_label OU surplus_marge_sensor OU tier_autorise_sensor défini. Liste vide → message info.
+    const delestActivated = !!(this.config.surplus_consumer_label || this.config.surplus_marge_sensor || this.config.tier_autorise_sensor);
+    const pvDelestZone = delestActivated ? `
+      <div class="dv"></div>
+      <div class="ct">⚡ DÉLESTAGES SURPLUS <span id="delestCount" style="color:#f4d03f;font-weight:700"></span></div>
+      <div class="delest-wrap" id="delestWrap">
+        <div class="delest-list" id="delestList"></div>
+        <div class="delest-overlay" id="delestOverlay" style="display:none">
+          ⛔ DÉLESTAGES SUSPENDUS
+          <small id="delestSuspendReason">Mode bridant actif</small>
+        </div>
+      </div>
+      <div class="delest-footer">
+        <span>Marge :<span class="v" id="delestMarge">--</span></span>
+        <span>Tier autorisé :<span class="v" id="delestTier">--</span></span>
+      </div>` : '';
+
     // HAOS-MONTASTRUC: Bandeau bas modes one-click (Spec B' Task 5 — 3 boutons saisonniers + lien Pilotage)
     // Visible si mode_input_select défini en YAML. Click → callService input_select.select_option. Highlight = mode actif.
     const modeIS = this.config.mode_input_select;
@@ -837,6 +855,23 @@ class KFlowCard extends HTMLElement {
       .mode-btn.active-winter{border-color:#58a6ff;background:rgba(88,166,255,.12);color:#58a6ff}
       .mode-btn.active-manual{border-color:#8b949e;background:rgba(139,148,158,.12);color:#c9d1d9}
       .mode-btn.active-auto{border-color:#bc8cff;background:rgba(188,140,255,.12);color:#bc8cff}
+      .delest-wrap{position:relative}
+      .delest-list{display:flex;flex-direction:column;gap:4px;margin-top:4px}
+      .delest-row{display:flex;align-items:center;gap:8px;padding:4px 8px;background:#0d1117;border:1px solid #21262d;border-radius:6px;font-size:.65rem;color:#c9d1d9}
+      .delest-row .status-dot{font-size:.85rem;line-height:1}
+      .delest-row .status-dot.on{color:#3fb950}
+      .delest-row .status-dot.off{color:#484f58}
+      .delest-row .name{flex:1;font-weight:600}
+      .delest-row .prio{color:#8b949e;font-size:.55rem;letter-spacing:1px}
+      .delest-row .conso{font-weight:700;color:#f4d03f}
+      .delest-empty{padding:8px 10px;background:#0d1117;border:1px dashed #30363d;border-radius:6px;font-size:.62rem;color:#8b949e;font-style:italic;line-height:1.5;text-align:center}
+      .delest-footer{display:flex;justify-content:space-between;align-items:center;margin-top:6px;padding:5px 9px;background:#0d1117;border:1px solid #21262d;border-radius:6px;font-size:.6rem;color:#8b949e}
+      .delest-footer .v{color:#c9d1d9;font-weight:700;margin-left:4px}
+      .delest-footer .v.pos{color:#3fb950}
+      .delest-footer .v.neg{color:#ff6b6b}
+      .delest-overlay{position:absolute;inset:0;background:rgba(13,17,23,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:6px;text-align:center;color:#ff6b6b;font-size:.7rem;font-weight:700;letter-spacing:1px;padding:8px;box-sizing:border-box}
+      .delest-overlay small{color:#8b949e;font-size:.55rem;font-weight:400;margin-top:3px}
+      .delest-suspended .delest-row,.delest-suspended .delest-empty{opacity:.35}
     </style>
     <div style="background:#161b22;border:1px solid #21262d;border-radius:12px;padding:13px;box-shadow:0 4px 20px rgba(0,0,0,.4);width:100%;box-sizing:border-box;">
       <div class="ct">⚡ Energy Flow <span id="battStatusBadge" style="margin-left:auto;font-size:.5rem;font-weight:700;letter-spacing:1.5px;padding:1px 8px;border-radius:8px;background:#21262d;color:#8b949e;text-transform:uppercase">IDLE</span></div>
@@ -959,6 +994,7 @@ class KFlowCard extends HTMLElement {
         <div class="pvi"><div class="ico">⚡</div><div class="lbl">Remaining</div><div class="val" id="invRemCap">-- Ah</div></div>
         <div class="pvi"><div class="ico">🏡</div><div class="lbl">Today Load</div><div class="val" id="invTodayLoad">-- kWh</div></div>
       </div>
+      ${pvDelestZone}
       ${pvModeButtons}
     </div>`;
   }
@@ -1269,6 +1305,82 @@ class KFlowCard extends HTMLElement {
           rsTxtEl.textContent = `RS DC ${valTxt}`;
           rsTxtEl.setAttribute('fill', 'rgba(255,235,110,.98)');
           rsRectEl.setAttribute('opacity', '1');
+        }
+      }
+    }
+
+    // HAOS-MONTASTRUC: Update zone délestage (Spec B' Task 4 — scan label surplus-consumer + marge/tier en pied + overlay)
+    if (this.config.surplus_consumer_label || this.config.surplus_marge_sensor || this.config.tier_autorise_sensor) {
+      const label = this.config.surplus_consumer_label || 'surplus-consumer';
+      const matches = [];
+      for (const [eid, edata] of Object.entries(this._hass?.entities || {})) {
+        if (!edata?.labels || !edata.labels.includes(label)) continue;
+        const m = eid.match(/^binary_sensor\.local_([^_]+)_(.+)_actif$/);
+        if (!m) continue;
+        const [, tranche, name] = m;
+        const consoE = `input_number.local_${tranche}_${name}_conso_ref_w`;
+        const prioE = `input_number.local_${tranche}_${name}_priorite`;
+        const active = this._hass.states[eid]?.state === 'on';
+        const conso = parseFloat(this._hass.states[consoE]?.state) || 0;
+        const prio = parseInt(this._hass.states[prioE]?.state) || 99;
+        const friendlyName = this._hass.states[eid]?.attributes?.friendly_name || eid;
+        matches.push({ name: friendlyName, prio, conso, active });
+      }
+      matches.sort((a, b) => a.prio - b.prio);
+
+      // Liste
+      const delestListEl = getEl('delestList');
+      if (delestListEl) {
+        if (matches.length === 0) {
+          delestListEl.innerHTML = `<div class="delest-empty">ℹ️ Aucun délestage configuré.<br>Les tranches T1 / T4 / T5 / T10 ajouteront leurs consommateurs au fil de l'eau (Spec A §8 convention quota).</div>`;
+        } else {
+          delestListEl.innerHTML = matches.map(m => {
+            const consoTxt = m.conso >= 1000 ? (m.conso/1000).toFixed(2)+' kW' : m.conso.toFixed(0)+' W';
+            return `<div class="delest-row"><span class="status-dot ${m.active ? 'on' : 'off'}">●</span><span class="name">${m.name}</span><span class="prio">P${m.prio}</span><span class="conso">${consoTxt}</span></div>`;
+          }).join('');
+        }
+      }
+
+      // Count
+      const activeCount = matches.filter(m => m.active).length;
+      const delestCountEl = getEl('delestCount');
+      if (delestCountEl) delestCountEl.textContent = matches.length > 0 ? `(${activeCount}/${matches.length} actifs)` : '';
+
+      // Marge surplus
+      const margeEl = getEl('delestMarge');
+      if (margeEl && this.config.surplus_marge_sensor) {
+        const margeRaw = this._val(this.config.surplus_marge_sensor);
+        if (margeRaw !== null && !isNaN(margeRaw)) {
+          const sign = margeRaw > 0 ? '+' : '';
+          const absVal = Math.abs(margeRaw);
+          const valTxt = absVal >= 1000 ? (margeRaw/1000).toFixed(2)+' kW' : margeRaw.toFixed(0)+' W';
+          margeEl.textContent = (margeRaw > 0 ? '+' : '') + valTxt;
+          margeEl.className = 'v ' + (margeRaw > 50 ? 'pos' : margeRaw < -50 ? 'neg' : '');
+        } else {
+          margeEl.textContent = '--';
+          margeEl.className = 'v';
+        }
+      }
+
+      // Tier autorisé
+      const tierEl = getEl('delestTier');
+      if (tierEl && this.config.tier_autorise_sensor) {
+        const tierRaw = this._val(this.config.tier_autorise_sensor);
+        tierEl.textContent = (tierRaw !== null && !isNaN(tierRaw)) ? `${parseInt(tierRaw)}/4` : '--';
+      }
+
+      // Overlay suspendu (mode bridant)
+      const overlayEl = getEl('delestOverlay');
+      const wrapEl = getEl('delestWrap');
+      if (overlayEl && wrapEl && this.config.mode_input_select) {
+        const currentMode = this._hass?.states?.[this.config.mode_input_select]?.state;
+        const suspendedModes = ['Manuel', 'Maintenance', 'Survie SoC bas', 'Tempo coupure prévue'];
+        const suspended = suspendedModes.includes(currentMode);
+        overlayEl.style.display = suspended ? 'flex' : 'none';
+        wrapEl.classList.toggle('delest-suspended', suspended);
+        if (suspended) {
+          const reasonEl = getEl('delestSuspendReason');
+          if (reasonEl) reasonEl.textContent = `Mode "${currentMode}" — aucune action auto`;
         }
       }
     }
