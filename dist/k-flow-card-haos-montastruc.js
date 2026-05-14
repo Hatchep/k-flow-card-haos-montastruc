@@ -732,6 +732,19 @@ class KFlowCard extends HTMLElement {
     const rsDcVisible = !!this.config.pv_rs_dc;
     const pvRsDcBadge = rsDcVisible ? `<rect id="arcRsDcLabelRect" x="268" y="22" width="96" height="26" rx="13" fill="rgba(255,200,50,.22)" stroke="rgba(255,210,60,.5)" stroke-width="1.2" opacity="0.55"/><text id="arcRsDcLabelText" x="316" y="39" text-anchor="middle" fill="rgba(255,235,110,.85)" font-size="11" font-weight="700">RS DC —</text>` : '';
 
+    // HAOS-MONTASTRUC: Bandeau bas modes one-click (Spec B' Task 5 — 3 boutons saisonniers + lien Pilotage)
+    // Visible si mode_input_select défini en YAML. Click → callService input_select.select_option. Highlight = mode actif.
+    const modeIS = this.config.mode_input_select;
+    const pvModeButtons = modeIS ? `
+      <div class="dv"></div>
+      <div class="ct">⚙️ Pilotage rapide</div>
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <div class="mode-btn" data-mode="Été délestage">☀️ Été</div>
+        <div class="mode-btn" data-mode="Hiver inertie">❄️ Hiver</div>
+        <div class="mode-btn" data-mode="Manuel">⏸️ Manuel</div>
+        <div class="mode-btn" data-mode="__navigate__">⋯ Autres</div>
+      </div>` : '';
+
     // EV placement inline with home and grid
     const evX = 462 - 39.5;   // centre of grid icon
     const evY = 397 - 39.5;   // centre of home icon
@@ -818,6 +831,12 @@ class KFlowCard extends HTMLElement {
       .pvi .lbl{font-size:.44rem;color:#8b949e;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
       .pvi .val{font-size:.76rem;font-weight:700;color:#c9d1d9}
       .pvi .val.yw{color:#f4d03f} text{font-family:'Segoe UI',Arial,sans-serif}
+      .mode-btn{flex:1;padding:8px 4px;background:#0d1117;border:1px solid #21262d;border-radius:8px;color:#c9d1d9;font-size:.7rem;font-weight:600;cursor:pointer;transition:all .2s;user-select:none;text-align:center}
+      .mode-btn:hover{border-color:#58a6ff;background:#161b22}
+      .mode-btn.active-summer{border-color:#f4a93b;background:rgba(244,169,59,.12);color:#f4d03f}
+      .mode-btn.active-winter{border-color:#58a6ff;background:rgba(88,166,255,.12);color:#58a6ff}
+      .mode-btn.active-manual{border-color:#8b949e;background:rgba(139,148,158,.12);color:#c9d1d9}
+      .mode-btn.active-auto{border-color:#bc8cff;background:rgba(188,140,255,.12);color:#bc8cff}
     </style>
     <div style="background:#161b22;border:1px solid #21262d;border-radius:12px;padding:13px;box-shadow:0 4px 20px rgba(0,0,0,.4);width:100%;box-sizing:border-box;">
       <div class="ct">⚡ Energy Flow <span id="battStatusBadge" style="margin-left:auto;font-size:.5rem;font-weight:700;letter-spacing:1.5px;padding:1px 8px;border-radius:8px;background:#21262d;color:#8b949e;text-transform:uppercase">IDLE</span></div>
@@ -940,6 +959,7 @@ class KFlowCard extends HTMLElement {
         <div class="pvi"><div class="ico">⚡</div><div class="lbl">Remaining</div><div class="val" id="invRemCap">-- Ah</div></div>
         <div class="pvi"><div class="ico">🏡</div><div class="lbl">Today Load</div><div class="val" id="invTodayLoad">-- kWh</div></div>
       </div>
+      ${pvModeButtons}
     </div>`;
   }
 
@@ -1250,6 +1270,41 @@ class KFlowCard extends HTMLElement {
           rsTxtEl.setAttribute('fill', 'rgba(255,235,110,.98)');
           rsRectEl.setAttribute('opacity', '1');
         }
+      }
+    }
+
+    // HAOS-MONTASTRUC: Update bandeau modes (Spec B' Task 5 — highlight bouton actif + attach listeners 1x)
+    if (this.config.mode_input_select) {
+      // 1. Attach listeners (une seule fois)
+      if (!this._modeBtnListenersAttached) {
+        const btns = root.querySelectorAll('.mode-btn[data-mode]');
+        btns.forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const m = e.currentTarget.dataset.mode;
+            if (m === '__navigate__') {
+              const path = this.config.mode_navigate_path || '/energie-victron/pilotage';
+              history.pushState(null, '', path);
+              window.dispatchEvent(new CustomEvent('location-changed', { detail: { replace: false } }));
+            } else if (this._hass) {
+              this._hass.callService('input_select', 'select_option', {
+                entity_id: this.config.mode_input_select,
+                option: m
+              });
+            }
+          });
+        });
+        if (btns.length > 0) this._modeBtnListenersAttached = true;
+      }
+      // 2. Highlight bouton actif selon mode courant
+      const currentMode = this._hass?.states?.[this.config.mode_input_select]?.state;
+      const userModes = { 'Été délestage': 'active-summer', 'Hiver inertie': 'active-winter', 'Manuel': 'active-manual' };
+      root.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('active-summer', 'active-winter', 'active-manual', 'active-auto');
+      });
+      if (userModes[currentMode]) {
+        root.querySelector(`.mode-btn[data-mode="${currentMode}"]`)?.classList.add(userModes[currentMode]);
+      } else if (currentMode) {
+        root.querySelector('.mode-btn[data-mode="__navigate__"]')?.classList.add('active-auto');
       }
     }
 
