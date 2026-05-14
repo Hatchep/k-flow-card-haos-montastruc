@@ -727,6 +727,11 @@ class KFlowCard extends HTMLElement {
     const pv3txt = showPvExtra ? `<text id="pv3label" x="8" y="424" font-size="9" fill="#8b949e" letter-spacing="1">PV3</text><text id="pv3FlowVal" x="8" y="438" font-size="12" font-weight="700" fill="#ffe83c">-- W</text>` : '';
     const pv4txt = showPvExtra ? `<text id="pv4label" x="8" y="456" font-size="9" fill="#8b949e" letter-spacing="1">PV4</text><text id="pv4FlowVal" x="8" y="470" font-size="12" font-weight="700" fill="#ffe83c">-- W</text>` : '';
 
+    // HAOS-MONTASTRUC: Mini-badge RS DC à droite du pill PV total (Spec B' Task 3 — placeholder pédagogique avant MES RS 450/200 fin 2026)
+    // Visible si pv_rs_dc défini en YAML. Style grisé si valeur ≤ 0 (placeholder), jaune actif si > 0.
+    const rsDcVisible = !!this.config.pv_rs_dc;
+    const pvRsDcBadge = rsDcVisible ? `<rect id="arcRsDcLabelRect" x="268" y="22" width="96" height="26" rx="13" fill="rgba(255,200,50,.22)" stroke="rgba(255,210,60,.5)" stroke-width="1.2" opacity="0.55"/><text id="arcRsDcLabelText" x="316" y="39" text-anchor="middle" fill="rgba(255,235,110,.85)" font-size="11" font-weight="700">RS DC —</text>` : '';
+
     // EV placement inline with home and grid
     const evX = 462 - 39.5;   // centre of grid icon
     const evY = 397 - 39.5;   // centre of home icon
@@ -862,6 +867,7 @@ class KFlowCard extends HTMLElement {
       </g>
       <rect id="arcPvLabelRect" x="162" y="22" width="96" height="26" rx="13" fill="rgba(255,200,50,.22)" stroke="rgba(255,210,60,.5)" stroke-width="1.2"/>
       <text id="arcPvLabelText" x="210" y="39" text-anchor="middle" fill="rgba(255,235,110,.98)" font-size="13" font-weight="800">0 W ⚡</text>
+      ${pvRsDcBadge}
       <g id="pvFlowGroup"></g>
 
       ${battGhostPath}
@@ -1226,6 +1232,26 @@ class KFlowCard extends HTMLElement {
     setDisplay('pv4label', this.config._show_pv_extra);
     setDisplay('pv4FlowVal', this.config._show_pv_extra);
     if (this.config._show_pv_extra) setText('pv4FlowVal', pv4 >= 1000 ? (pv4 / 1000).toFixed(2) + ' kW' : pv4.toFixed(0) + ' W');
+
+    // HAOS-MONTASTRUC: Update mini-badge RS DC (Spec B' Task 3 — placeholder discret jaune-pâle si ≤0, jaune impact si >0)
+    if (this.config.pv_rs_dc) {
+      const rsRaw = this._val(this.config.pv_rs_dc);
+      const rsTxtEl = getEl('arcRsDcLabelText');
+      const rsRectEl = getEl('arcRsDcLabelRect');
+      if (rsTxtEl && rsRectEl) {
+        const rsActive = (rsRaw !== null && !isNaN(rsRaw) && rsRaw > 0);
+        if (!rsActive) {
+          rsTxtEl.textContent = 'RS DC —';
+          rsTxtEl.setAttribute('fill', 'rgba(255,235,110,.55)');
+          rsRectEl.setAttribute('opacity', '0.55');
+        } else {
+          const valTxt = rsRaw >= 1000 ? (rsRaw/1000).toFixed(2) + ' kW' : rsRaw.toFixed(0) + ' W';
+          rsTxtEl.textContent = `RS DC ${valTxt}`;
+          rsTxtEl.setAttribute('fill', 'rgba(255,235,110,.98)');
+          rsRectEl.setAttribute('opacity', '1');
+        }
+      }
+    }
 
     setText('invTodayPv', todayPv + ' kWh');
     setText('invTodayBattChg', todayBattChg + ' kWh');
