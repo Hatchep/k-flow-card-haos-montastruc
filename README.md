@@ -1,3 +1,55 @@
+# k-flow-card-haos-montastruc
+
+> Fork de [thekhan1122/k-flow-card](https://github.com/thekhan1122/k-flow-card) — adaptation pour le projet **HAOS Maison de Montastruc** (vitrine EKOSYN).
+
+**Spec source :** `docs/superpowers/specs/2026-05-14-spec-b-prime-card-hero-design.md` (repo `Hatchep/haos-projet`)
+**Plan d'impl :** `docs/superpowers/plans/2026-05-14-spec-b-prime-card-hero-plan.md`
+
+## Modifications vs upstream
+
+| Modification | Status | Marker code |
+|---|---|---|
+| Renommer tag custom element + aliases YAML Victron-compatible (`pv_fronius_l1/2/3`, `pv_rs_dc`, etc.) | TODO Task 2 | `// HAOS-MONTASTRUC: renamed fields` |
+| Masquer champs BMS non-applicable au setup Pylontech (cell min/max V, MOS, temp 2) | TODO Task 2 | `// HAOS-MONTASTRUC: hide BMS details` |
+| Slot RS DC distinct du Fronius (2ème source solaire) | TODO Task 3 | `// HAOS-MONTASTRUC: RS DC slot` |
+| Zone délestage live (auto-list entités avec label `surplus-consumer` + marge surplus) | TODO Task 4 | `// HAOS-MONTASTRUC: load shedding zone` |
+| Bandeau bas modes one-click (Été/Hiver/Manuel + navigate Pilotage) | TODO Task 5 | `// HAOS-MONTASTRUC: modes bar` |
+| Slot EV T10 placeholder | TODO Task 5 | `// HAOS-MONTASTRUC: EV slot` |
+| Variables HA (`--primary-color` etc.) pour cohérence theme | TODO Task 6 | `// HAOS-MONTASTRUC: HA theme vars` |
+| Polish responsive + animations Spec A | TODO Task 7 | `// HAOS-MONTASTRUC: polish` |
+
+## Versionnage
+
+| Tag | Description |
+|---|---|
+| `v7.1.1-haos-0` | Release initiale, **identique upstream** (header README seulement) — Task 1 |
+| `v7.1.1-haos-1` | Renommage + aliases Victron + masquage BMS N/A — Task 2 |
+| `v7.1.1-haos-2` | Slot RS DC distinct — Task 3 |
+| `v7.1.1-haos-3` | Zone délestage live — Task 4 |
+| `v7.1.1-haos-4` | Bandeau modes + slot EV T10 — Task 5 |
+| `v7.1.1-haos-5` | Variables HA theme — Task 6 |
+| `v7.1.1-haos-final` | Polish responsive + animations + release finale — Task 7 |
+
+## Note workflow dev
+
+Le repo `k-flow-card` upstream est un **dépôt de distribution HACS-only** : pas de `package.json`, pas de `src/`, juste `dist/k-flow-card.js` pré-buildé (1261 lignes, **non-minifié, lisible**) + 3 icônes PNG. Les modifications sont donc faites **directement sur `dist/k-flow-card.js`** (workflow : éditer → commit → tag git → HACS télécharge). Pas de `npm install` ni `npm run build` requis.
+
+## Installation HACS (Custom Repository)
+
+1. HA web UI → HACS → Frontend
+2. ⋮ (menu) → Custom repositories
+3. Dépôt : `https://github.com/Hatchep/k-flow-card-haos-montastruc`
+4. Type : **Tableau de bord**
+5. Ajouter, puis Download la version désirée
+
+---
+
+# README upstream original
+
+> Ce qui suit est le README upstream du projet `k-flow-card` v7.1.1 par [@thekhan1122](https://github.com/thekhan1122). Conservé pour référence des features disponibles.
+
+---
+
 # ⚡ k-flow-card
 
 > **Repository:** https://github.com/thekhan1122/k-flow-card
