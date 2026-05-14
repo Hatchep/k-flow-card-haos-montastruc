@@ -9,8 +9,9 @@
 
 | Modification | Status | Marker code |
 |---|---|---|
-| Renommer tag custom element + aliases YAML Victron-compatible (`pv_fronius_l1/2/3`, `pv_rs_dc`, etc.) | TODO Task 2 | `// HAOS-MONTASTRUC: renamed fields` |
-| Masquer champs BMS non-applicable au setup Pylontech (cell min/max V, MOS, temp 2) | TODO Task 2 | `// HAOS-MONTASTRUC: hide BMS details` |
+| Renommer tag custom element + aliases YAML Victron-compatible (`pv_fronius_l1/2/3`, `battery_pack_*`) | ✅ `v7.1.1-haos-1` | `// HAOS-MONTASTRUC: renamed type + tag` / `Victron-compatible aliases` |
+| Masquer champs BMS non-applicable au setup Pylontech (cell min/max V, MOS, temp 2) — toggle `_show_bms_details` (défaut `false`) | ✅ `v7.1.1-haos-1` | `// HAOS-MONTASTRUC: BMS details hidden by default` |
+| Renommer fichier `dist/k-flow-card.js` → `dist/k-flow-card-haos-montastruc.js` + iconPath fork | ✅ `v7.1.1-haos-1` | `// HAOS-MONTASTRUC: icons served from fork's HACS folder` |
 | Slot RS DC distinct du Fronius (2ème source solaire) | TODO Task 3 | `// HAOS-MONTASTRUC: RS DC slot` |
 | Zone délestage live (auto-list entités avec label `surplus-consumer` + marge surplus) | TODO Task 4 | `// HAOS-MONTASTRUC: load shedding zone` |
 | Bandeau bas modes one-click (Été/Hiver/Manuel + navigate Pilotage) | TODO Task 5 | `// HAOS-MONTASTRUC: modes bar` |

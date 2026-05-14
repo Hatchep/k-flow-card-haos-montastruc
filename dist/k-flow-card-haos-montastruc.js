@@ -616,6 +616,8 @@ class KFlowCard extends HTMLElement {
       _show_pv_extra: false,   // combined toggle
       _show_ev: false,
       _show_limits: false,
+      // HAOS-MONTASTRUC: hide BMS cell min/max V + MOS temp by default (Victron+Pylontech setup doesn't expose per-cell)
+      _show_bms_details: false,
     };
   }
 
@@ -623,7 +625,26 @@ class KFlowCard extends HTMLElement {
   static getConfigElement() { return document.createElement('k-flow-card-editor'); }
 
   setConfig(config) {
-    this.config = { ...KFlowCard.getStubConfig(), ...config };
+    // HAOS-MONTASTRUC: Victron-compatible aliases → upstream field names.
+    // Allows YAML to use parlant names (pv_fronius_l1, battery_pack_soc, etc.)
+    // while keeping the existing render logic untouched.
+    const aliases = {
+      pv_fronius_total:     'pv_total_power',
+      pv_fronius_l1:        'pv1_power',
+      pv_fronius_l2:        'pv2_power',
+      pv_fronius_l3:        'pv3_power',
+      battery_pack_soc:     'battery_soc',
+      battery_pack_power:   'battery_power',
+      battery_pack_current: 'battery_current',
+      battery_pack_voltage: 'battery_voltage',
+      battery_pack_temp:    'battery_temp1',
+      // pv_rs_dc handled separately in Task 3 (distinct 2nd solar slot)
+    };
+    const mapped = { ...config };
+    for (const [alias, original] of Object.entries(aliases)) {
+      if (config[alias] && !config[original]) mapped[original] = config[alias];
+    }
+    this.config = { ...KFlowCard.getStubConfig(), ...mapped };
     this._buildStaticSVG();
   }
 
@@ -698,7 +719,8 @@ class KFlowCard extends HTMLElement {
     const showBatt1 = !!(this.config._show_battery !== false);
     const ev   = !!(this.config._show_ev);
     const showPvExtra = !!(this.config._show_pv_extra);
-    const iconPath = '/local/community/k-flow-card';    // icons served from HACS community folder
+    // HAOS-MONTASTRUC: icons served from fork's HACS folder
+    const iconPath = '/local/community/k-flow-card-haos-montastruc';
 
     const pv3txt = showPvExtra ? `<text id="pv3label" x="8" y="424" font-size="9" fill="#8b949e" letter-spacing="1">PV3</text><text id="pv3FlowVal" x="8" y="438" font-size="12" font-weight="700" fill="#ffe83c">-- W</text>` : '';
     const pv4txt = showPvExtra ? `<text id="pv4label" x="8" y="456" font-size="9" fill="#8b949e" letter-spacing="1">PV4</text><text id="pv4FlowVal" x="8" y="470" font-size="12" font-weight="700" fill="#ffe83c">-- W</text>` : '';
@@ -883,6 +905,8 @@ class KFlowCard extends HTMLElement {
         <div style="flex:1;display:flex;align-items:center;gap:4px"><span style="font-size:.42rem;color:#8b949e;letter-spacing:1px;text-transform:uppercase">Pwr</span><div style="flex:1;background:#21262d;border-radius:20px;height:9px;overflow:hidden;position:relative"><div id="pwrBar" style="position:absolute;inset:0;right:auto;width:0%;border-radius:20px;background:#3fb950;transition:width .4s,background .4s"></div></div></div>
       </div>
       <div class="dv"></div>
+      <!-- HAOS-MONTASTRUC: BMS details (cell min/max V, MOS temp) hidden by default — toggle _show_bms_details:true pour réactiver -->
+      ${this.config._show_bms_details ? `
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:5px">
         <div class="st"><div class="l">${this.config.label_cell_temp_minmax || 'CELL TEMP MIN/MAX'}</div><div class="v" id="bTemp1">-- °C</div></div>
         <div class="st"><div class="l">${this.config.label_bms_temp || 'BMS TEMP'}</div><div class="v" id="bTemp2">-- °C</div></div>
@@ -893,6 +917,13 @@ class KFlowCard extends HTMLElement {
         <div class="st"><div class="l">${this.config.label_max_cell || 'Max Cell'}</div><div class="v" id="bMaxCell">-- V</div></div>
         <div class="st"><div class="l">${this.config.label_batt_dis || 'Batt Dis.'}</div><div class="v" id="bBattDis">-- kWh</div></div>
       </div>
+      ` : `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:5px">
+        <div class="st"><div class="l">${this.config.label_cell_temp_minmax || 'CELL TEMP'}</div><div class="v" id="bTemp1">-- °C</div></div>
+        <div class="st"><div class="l">${this.config.label_endurance || 'ENDURANCE'}</div><div class="v" id="bEndurance">--</div></div>
+        <div class="st"><div class="l">${this.config.label_batt_dis || 'Batt Dis.'}</div><div class="v" id="bBattDis">-- kWh</div></div>
+      </div>
+      `}
       <div class="dv"></div>
       <div class="ct">☀️ Inverter</div>
       <div class="pvf">
@@ -1251,12 +1282,13 @@ class KFlowCard extends HTMLElement {
     }
   }
 }
+// HAOS-MONTASTRUC: renamed type + tag to avoid conflict with upstream k-flow-card
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'k-flow-card',
-  name: 'K-Flow Card',
-  description: 'Solar Energy Flow Card',
+  type: 'k-flow-card-haos-montastruc',
+  name: 'K-Flow Card (HAOS Montastruc)',
+  description: 'Solar Energy Flow Card — fork adapted for Victron/Pylontech',
   preview: true,
-  version: '7.1.1',
+  version: '7.1.1-haos-1',
 });
-customElements.define('k-flow-card', KFlowCard);
+customElements.define('k-flow-card-haos-montastruc', KFlowCard);
