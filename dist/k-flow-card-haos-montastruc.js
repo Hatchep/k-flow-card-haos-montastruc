@@ -757,10 +757,9 @@ class KFlowCard extends HTMLElement {
       <div class="dv"></div>
       <div class="ct">⚙️ Pilotage rapide</div>
       <div style="display:flex;gap:6px;margin-top:4px">
-        <div class="mode-btn" data-mode="Été délestage">☀️ Été</div>
-        <div class="mode-btn" data-mode="Hiver inertie">❄️ Hiver</div>
-        <div class="mode-btn" data-mode="Manuel">⏸️ Manuel</div>
-        <div class="mode-btn" data-mode="__navigate__">⋯ Autres</div>
+        <div class="mode-btn" data-mode="Auto">▶ Auto</div>
+        <div class="mode-btn" data-mode="Pause 24 h">⏸ Pause 24 h</div>
+        <div class="mode-btn" data-mode="Maintenance">⚙ Maintenance</div>
       </div>` : '';
 
     // EV placement inline with home and grid
@@ -1373,14 +1372,14 @@ class KFlowCard extends HTMLElement {
       const overlayEl = getEl('delestOverlay');
       const wrapEl = getEl('delestWrap');
       if (overlayEl && wrapEl && this.config.mode_input_select) {
-        const currentMode = this._hass?.states?.[this.config.mode_input_select]?.state;
-        const suspendedModes = ['Manuel', 'Maintenance', 'Survie SoC bas', 'Tempo coupure prévue'];
-        const suspended = suspendedModes.includes(currentMode);
+        const currentMode = this._hass?.states?.['sensor.local_nrj_conduite']?.state;
+        const reserve = this._hass?.states?.['binary_sensor.local_nrj_protection_surplus']?.state;
+        const suspended = currentMode !== 'Auto' || reserve !== 'off';
         overlayEl.style.display = suspended ? 'flex' : 'none';
         wrapEl.classList.toggle('delest-suspended', suspended);
         if (suspended) {
           const reasonEl = getEl('delestSuspendReason');
-          if (reasonEl) reasonEl.textContent = `Mode "${currentMode}" — aucune action auto`;
+          if (reasonEl) reasonEl.textContent = currentMode !== 'Auto' ? `Pilotage : ${currentMode || 'indisponible'}` : 'Réserve batterie — usages de surplus suspendus';
         }
       }
     }
@@ -1393,30 +1392,23 @@ class KFlowCard extends HTMLElement {
         btns.forEach(btn => {
           btn.addEventListener('click', (e) => {
             const m = e.currentTarget.dataset.mode;
-            if (m === '__navigate__') {
-              const path = this.config.mode_navigate_path || '/energie-victron/pilotage';
-              history.pushState(null, '', path);
-              window.dispatchEvent(new CustomEvent('location-changed', { detail: { replace: false } }));
-            } else if (this._hass) {
-              this._hass.callService('input_select', 'select_option', {
-                entity_id: this.config.mode_input_select,
-                option: m
-              });
+            const service = { 'Auto': 'local_nrj_conduite_auto', 'Pause 24 h': 'local_nrj_conduite_pause_24h', 'Maintenance': 'local_nrj_conduite_maintenance' }[m];
+            if (service && this._hass) {
+              this._hass.callService('script', service, {});
             }
           });
         });
         if (btns.length > 0) this._modeBtnListenersAttached = true;
       }
       // 2. Highlight bouton actif selon mode courant
-      const currentMode = this._hass?.states?.[this.config.mode_input_select]?.state;
-      const userModes = { 'Été délestage': 'active-summer', 'Hiver inertie': 'active-winter', 'Manuel': 'active-manual' };
+      const currentMode = this._hass?.states?.['sensor.local_nrj_conduite']?.state;
+      const userModes = { 'Auto': 'active-summer', 'Pause 24 h': 'active-manual', 'Maintenance': 'active-auto' };
       root.querySelectorAll('.mode-btn').forEach(btn => {
         btn.classList.remove('active-summer', 'active-winter', 'active-manual', 'active-auto');
       });
       if (userModes[currentMode]) {
         root.querySelector(`.mode-btn[data-mode="${currentMode}"]`)?.classList.add(userModes[currentMode]);
-      } else if (currentMode) {
-        root.querySelector('.mode-btn[data-mode="__navigate__"]')?.classList.add('active-auto');
+
       }
     }
 
